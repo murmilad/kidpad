@@ -29,9 +29,9 @@ int cleared = 0;
 short digit_1;
 short digit_2;
 short operation = 0;
-String words[40];
+String words[50];
 String colors[5];
-short pans[40];
+short pans[50];
 short color_pans[5];
 boolean started = false;
 boolean ask = true;
@@ -167,6 +167,27 @@ void setup()
   words[39] = "\xC6\xB0\xC0\xCC";
   pans[39] = 20;
 
+  words[40] = "";
+  pans[40] = 0;
+  words[41] = "\xDF\xDE\xDD\xD5\xD4\xD5\xDB\xEC\xDD\xD8\xDA";
+  pans[41] = 0;
+  words[42] = "\xD2\xE2\xDE\xE0\xDD\xD8\xDA";
+  pans[42] = 10;
+  words[43] = "\xE1\xE0\xD5\xD4\xD0";
+  pans[43] = 20;
+  words[44] = "\xE7\xD5\xE2\xD2\xD5\xE0\xD3";
+  pans[44] = 10;
+  words[45] = "\xDF\xEF\xE2\xDD\xD8\xE6\xD0";
+  pans[45] = 10;
+  words[46] = "\xE1\xE3\xD1\xD1\xDE\xE2\xD0";
+  pans[46] = 10;
+  words[47] = "\xD2\xDE\xE1\xDA\xE0\xD5\xE1\xD5\xDD\xEC\xD5";
+  pans[47] = 0;
+  words[48] = "";
+  pans[48] = 20;
+  words[49] = "";
+  pans[49] = 20;
+
   // COLORS
 
   colors[0] = "\xDA\xE0\xD0\xE1\xDD\xEB\xD9";
@@ -215,7 +236,7 @@ void loop()
     if (color_mode) {
       ask = true;
       needToPrint = false;
-      operation = 7;
+      operation = 8;
       color_mode = false;
       delay(3000);
     } else if (color > 0){
@@ -227,7 +248,7 @@ void loop()
     // line and reset the count. We mod the count by 10 because '0' will send 10 pulses.
 
       char charBufVar[150];
-      if (operation == 7 || color > 0){
+      if (operation == 8 || color > 0){
         String("\x3f").toCharArray(charBufVar, 150);
       } else {
         String(count % 10).toCharArray(charBufVar, 150);
@@ -254,7 +275,8 @@ void loop()
         || (operation == 4 && digit_1 == (count % 10))
         || (operation == 5 && digit_1 == (count % 10))
         || (operation == 6 && digit_1 == (count % 10))
-        || (operation == 7 && digit_1 == color)
+        || (operation == 7 && digit_1 == (count % 10))
+        || (operation == 8 && digit_1 == color)
       ) {
         digitalWrite(DOOR_1, HIGH);
         u8g.firstPage();  
@@ -278,7 +300,7 @@ void loop()
       ask = false;
 
       if (operation == 0) {
-        operation = random(1,8);
+        operation = random(1,9);
       }
       String op = "";
       
@@ -295,11 +317,11 @@ void loop()
           digit_1 = random(0, 9);
           String(words[digit_1]).toCharArray(charBufOperation, 150);
           //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
-        } else if (operation == 4 || operation == 5 || operation == 6) {
-          digit_1 = random(1, 9);
+        } else if (operation == 4 || operation == 5 || operation == 6 || operation == 7) {
+          digit_1 = random(1, operation == 7 ? 8 : 10);
           String(words[digit_1 + 10 * (operation - 3)]).toCharArray(charBufOperation, 150);
           //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
-        } else if (operation == 7) {
+        } else if (operation == 8) {
             digit_1 = random(1, 6);
             String(colors[digit_1-1]).toCharArray(charBufOperation, 150);
             //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
@@ -312,10 +334,10 @@ void loop()
         if (operation == 3) {
           u8g.setFont(u8g_font_osr21);
           u8g.drawStr(pans[digit_1], 52 , charBufOperation);
-        } else if (operation == 4 || operation == 5 || operation == 6) {
+        } else if (operation == 4 || operation == 5 || operation == 6 || operation == 7) {
           u8g.setFont(u8g_font_osr21);
           u8g.drawStr(pans[digit_1 + 10 * (operation - 3)], 52 , charBufOperation);
-        } else if (operation == 7) {
+        } else if (operation == 8) {
             u8g.setFont(u8g_font_osr21);
             u8g.drawStr(color_pans[digit_1-1], 52 , charBufOperation);
         } else {
