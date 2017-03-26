@@ -33,6 +33,7 @@ String words[50];
 String colors[5];
 short pans[50];
 short color_pans[5];
+String operations[2];
 boolean started = false;
 boolean ask = true;
 boolean color_mode = false;
@@ -201,6 +202,14 @@ void setup()
   colors[4] = "\xC7\xA1\xC0\xBD\xCB\xB9";
   color_pans[4] = 0;
 
+  // OPERATIONS
+
+  operations[0] = "\xBF\xBB\xCE\xC1";
+//  operations_pans[0] = 20;
+  operations[1] = "\xBC\xB8\xBD\xC3\xC1";
+//  operations_pans[1] = 10;
+
+
 
 
 }
@@ -236,7 +245,7 @@ void loop()
     if (color_mode) {
       ask = true;
       needToPrint = false;
-      operation = 8;
+      operation = 10;
       color_mode = false;
       delay(3000);
     } else if (color > 0){
@@ -271,12 +280,14 @@ void loop()
       if (
         (operation == 1 && ((digit_1 + digit_2) == (count % 10)))
         || (operation == 2 && ((digit_1 - digit_2) == (count % 10)))
-        || (operation == 3 && digit_1 == (count % 10))
-        || (operation == 4 && digit_1 == (count % 10))
+        || (operation == 3 && ((digit_1 + digit_2) == (count % 10)))
+        || (operation == 4 && ((digit_1 - digit_2) == (count % 10)))
         || (operation == 5 && digit_1 == (count % 10))
         || (operation == 6 && digit_1 == (count % 10))
         || (operation == 7 && digit_1 == (count % 10))
-        || (operation == 8 && digit_1 == color)
+        || (operation == 8 && digit_1 == (count % 10))
+        || (operation == 9 && digit_1 == (count % 10))
+        || (operation == 10 && digit_1 == color)
       ) {
         digitalWrite(DOOR_1, HIGH);
         u8g.firstPage();  
@@ -287,7 +298,7 @@ void loop()
           String("\x81").toCharArray(charBufVar, 150);
           u8g.drawStr( 40, 52 , charBufVar);
         } while( u8g.nextPage() );
-        delay(3000);
+        delay(6000);
         digitalWrite(DOOR_1, LOW);
         operation = 0;
       }
@@ -300,30 +311,50 @@ void loop()
       ask = false;
 
       if (operation == 0) {
-        operation = random(1,9);
+        operation = random(1,11);
       }
       String op = "";
       
-        char charBufOperation[150];
+        char charBufOperation1[150];
+        char charBufOperation2[150];
+        char charBufOperation3[150];
+
+        op.toCharArray(charBufOperation1, 150);
+        op.toCharArray(charBufOperation2, 150);
+        op.toCharArray(charBufOperation3, 150);
+
+
         if (operation == 1) {
           digit_1 = random(1, 9);
           digit_2 = random(1, 10 - digit_1);
-          (String(digit_1) + "+" +  String(digit_2)).toCharArray(charBufOperation, 150);
+          (String(digit_1) + "+" +  String(digit_2)).toCharArray(charBufOperation2, 150);
         } else if (operation == 2) {
           digit_1 = random(1, 10);
           digit_2 = random(1, digit_1);
-          (String(digit_1) + "-" +  String(digit_2)).toCharArray(charBufOperation, 150);
+          (String(digit_1) + "-" +  String(digit_2)).toCharArray(charBufOperation2, 150);
         } else if (operation == 3) {
+          digit_1 = random(1, 9);
+          digit_2 = random(1, 10 - digit_1);
+          (words[digit_1]).toCharArray(charBufOperation1, 150);
+          (operations[0]).toCharArray(charBufOperation2, 150);
+          (words[digit_2]).toCharArray(charBufOperation3, 150);
+        } else if (operation == 4) {
+          digit_1 = random(1, 10);
+          digit_2 = random(1, digit_1);
+          (words[digit_1]).toCharArray(charBufOperation1, 150);
+          (operations[1]).toCharArray(charBufOperation2, 150);
+          (words[digit_2]).toCharArray(charBufOperation3, 150);
+        } else if (operation == 5) {
           digit_1 = random(0, 9);
-          String(words[digit_1]).toCharArray(charBufOperation, 150);
+          String(words[digit_1]).toCharArray(charBufOperation2, 150);
           //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
-        } else if (operation == 4 || operation == 5 || operation == 6 || operation == 7) {
-          digit_1 = random(1, operation == 7 ? 8 : 10);
-          String(words[digit_1 + 10 * (operation - 3)]).toCharArray(charBufOperation, 150);
+        } else if (operation == 6 || operation == 7 || operation == 8 || operation == 9) {
+          digit_1 = random(1, operation == 9 ? 8 : 10);
+          String(words[digit_1 + 10 * (operation - 5)]).toCharArray(charBufOperation2, 150);
           //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
-        } else if (operation == 8) {
+        } else if (operation == 10) {
             digit_1 = random(1, 6);
-            String(colors[digit_1-1]).toCharArray(charBufOperation, 150);
+            String(colors[digit_1-1]).toCharArray(charBufOperation2, 150);
             //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
         }
 
@@ -331,18 +362,25 @@ void loop()
       do {
 
 
-        if (operation == 3) {
+      if (operation == 3 || operation == 4) {
           u8g.setFont(u8g_font_osr21);
-          u8g.drawStr(pans[digit_1], 52 , charBufOperation);
-        } else if (operation == 4 || operation == 5 || operation == 6 || operation == 7) {
-          u8g.setFont(u8g_font_osr21);
-          u8g.drawStr(pans[digit_1 + 10 * (operation - 3)], 52 , charBufOperation);
-        } else if (operation == 8) {
+          u8g.drawStr(10, 18 , charBufOperation1);
+          u8g.drawStr(10, 40 , charBufOperation2);
+          u8g.drawStr(10, 62 , charBufOperation3);
+      } else if (operation == 5) {
             u8g.setFont(u8g_font_osr21);
-            u8g.drawStr(color_pans[digit_1-1], 52 , charBufOperation);
+          u8g.drawStr(10, 18 , charBufOperation1);
+          u8g.drawStr(10, 40 , charBufOperation2);
+          u8g.drawStr(10, 62 , charBufOperation3);
+        } else if (operation == 6 || operation == 7 || operation == 8 || operation == 9) {
+          u8g.setFont(u8g_font_osr21);
+          u8g.drawStr(pans[digit_1 + 10 * (operation - 5)], 52 , charBufOperation2);
+        } else if (operation == 10) {
+            u8g.setFont(u8g_font_osr21);
+            u8g.drawStr(color_pans[digit_1-1], 52 , charBufOperation2);
         } else {
           u8g.setFont(u8g_font_osr35);
-          u8g.drawStr(15, 52 , charBufOperation);
+          u8g.drawStr(15, 52 , charBufOperation2);
         }
       } while( u8g.nextPage() );
    }
