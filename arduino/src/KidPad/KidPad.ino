@@ -26,8 +26,11 @@
 #define BLACK_DI 22
 #define SIMPLE_DI 28
 #define VOICE_DI 34
+#define OPEN_DI 27
+#define PRESSURE_AI A0
 
 boolean voice_pressed = false;
+
 
 //D0 D1 CS A0 RESET
 U8GLIB_SSD1306_128X64 u8g(7, 6, 5, 3, 2);
@@ -165,6 +168,11 @@ void setup() {
 
   pinMode(VOICE_DI,INPUT);
   digitalWrite(VOICE_DI,HIGH);
+
+  pinMode(OPEN_DI,INPUT);
+  digitalWrite(OPEN_DI,HIGH);
+
+  pinMode(PRESSURE_AI,INPUT);
 
   
 
@@ -380,51 +388,54 @@ void loop()
  
   simple_mode = digitalRead(SIMPLE_DI)==LOW;
 
+  if (digitalRead(OPEN_DI)==LOW) { // cower is open
 
-  if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS) {
-  // the dial isn't being dialed, or has just finished being dialed.
-
-    if (main_state == 1) {
-    // if it's only just finished being dialed, we need to send the number down the serial
-    // line and reset the main_result. We mod the main_result by 10 because '0' will send 10 pulses.
-
-      show_result_functions[operation]();
-
-      //delay(400);
-      delay(1000);
-      if (check_result_functions[operation]()) {
-        digitalWrite(DOOR_1, HIGH);
-        u8g.firstPage();  
-        do {
-          char charBufVar[150];
-          String(main_result % 10).toCharArray(charBufVar, 150);
-          u8g.setFont(u8g_font_osr35);
-          String("\x81").toCharArray(charBufVar, 150); // q
-          u8g.drawStr( 40, 52 , charBufVar);
-        } while( u8g.nextPage() );
-        delay(6000);
-        digitalWrite(DOOR_1, LOW);
-        operation = 0;
+    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS) {
+    // the dial isn't being dialed, or has just finished being dialed.
+  
+      if (main_state == 1) {
+      // if it's only just finished being dialed, we need to send the number down the serial
+      // line and reset the main_result. We mod the main_result by 10 because '0' will send 10 pulses.
+  
+        show_result_functions[operation]();
+  
+        //delay(400);
+        delay(1000);
+        if (check_result_functions[operation]()) {
+          digitalWrite(DOOR_1, HIGH);
+          u8g.firstPage();  
+          do {
+            char charBufVar[150];
+            String(main_result % 10).toCharArray(charBufVar, 150);
+            u8g.setFont(u8g_font_osr35);
+            String("\x81").toCharArray(charBufVar, 150); // q
+            u8g.drawStr( 40, 52 , charBufVar);
+          } while( u8g.nextPage() );
+          delay(6000);
+          digitalWrite(DOOR_1, LOW);
+          operation = 0;
+        }
+  
+        main_state = 0;
+        main_result = 0;
+        cleared = 0;
+        ask = true;
+      } else if (ask){
+        ask = false;
+  
+        if (operation == 0) {
+          operation = simple_mode ? random(11,12) : random(1,11);
+        }
+        debug( "get_question_functions:" );
+        debug( operation );
+        get_question_functions[operation]();
       }
-
-      main_state = 0;
-      main_result = 0;
-      cleared = 0;
-      ask = true;
-    } else if (ask){
-      ask = false;
-
-      if (operation == 0) {
-        operation = simple_mode ? random(11,12) : random(1,11);
-      }
-      debug( "get_question_functions:" );
-      debug( operation );
-      get_question_functions[operation]();
-    }
-  } 
-
-  get_functions[operation]();
-   
+    } 
+  
+    get_functions[operation]();
+  } else {
+    debug(analogRead(PRESSURE_AI));
+  }
 }
 
 void get_dummy() {
