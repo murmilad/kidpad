@@ -1,3 +1,9 @@
+
+// Voice
+#include <SoftwareSerial.h>
+#include <DFPlayerMini_Fast.h>
+
+
 // FRID
 #include <deprecated.h>
 #include <MFRC522Extended.h>
@@ -19,6 +25,9 @@
 #define BLUE_DI 23
 #define BLACK_DI 22
 #define SIMPLE_DI 28
+#define VOICE_DI 34
+
+boolean voice_pressed = false;
 
 //D0 D1 CS A0 RESET
 U8GLIB_SSD1306_128X64 u8g(7, 6, 5, 3, 2);
@@ -65,10 +74,15 @@ byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN};
 MFRC522 mfrc522[NR_OF_READERS];
 
 byte letter_cards[][7] = {
-    {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80}
+    {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80} // А
 };
 
-//Main
+// Voice
+
+SoftwareSerial voice_serial(10, 11); // RX, TX
+DFPlayerMini_Fast voice_mp3;
+
+// Main
 
 #define NUMBER_OF_FUNCTIONS 12
 
@@ -149,8 +163,13 @@ void setup() {
   pinMode(SIMPLE_DI,INPUT);
   digitalWrite(SIMPLE_DI,HIGH);
 
+  pinMode(VOICE_DI,INPUT);
+  digitalWrite(VOICE_DI,HIGH);
+
+  
+
   if (DEBUG_SERIAL) {
-    Serial.begin(9600);           // Initialize serial communications with the PC
+    Serial.begin(115200);           // Initialize serial communications with the PC
     while (!Serial);              // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
   }
 
@@ -335,6 +354,16 @@ void setup() {
 //  operations_pans[0] = 20;
   operations[1] = "\xBC\xB8\xBD\xC3\xC1";
 //  operations_pans[1] = 10;
+
+
+// Voice
+
+  voice_serial.begin(9600);
+
+  voice_mp3.begin(voice_serial);
+  
+  debug("Setting volume to max");
+  voice_mp3.volume(30);
 
   
 
@@ -706,15 +735,32 @@ void get_question_rfid_letter(){
   u8g.firstPage();  
   do {
     u8g.setFont(u8g_font_osr35);
-    u8g.drawStr(15, 52 , charBufOperation2);
+    u8g.drawStr( 40, 52 , charBufOperation2);
   } while( u8g.nextPage() );
 }
 
 void get_rfid() {
+
+        check_voice();
+        if (voice_pressed) {
+          debug("voice pressed");
+
+          voice_mp3.wakeUp();
+          voice_mp3.play(digit_1);
+
+          debug(digit_1);
+          delay(2000);
+          voice_mp3.sleep();
+          voice_pressed = false;
+        } 
+        check_voice(); 
           // RFID Loop
-        for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) { 
+        for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+          check_voice(); 
+
           // Looking for new cards
           if (mfrc522[reader].PICC_IsNewCardPresent() && mfrc522[reader].PICC_ReadCardSerial()) {
+              check_voice();
 
               if(DEBUG_SERIAL) {
                 Serial.print(F("Reader "));
@@ -727,6 +773,7 @@ void get_rfid() {
               }
         
               for (int i = 0; i < mfrc522[reader].uid.size; i++) {       //tagarray's columns
+                check_voice();
                 if ( mfrc522[reader].uid.uidByte[i] != letter_cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
                     main_state = 1;
                     main_result = 0;
@@ -748,15 +795,25 @@ void get_rfid() {
                 MFRC522::PICC_Type piccType = mfrc522[reader].PICC_GetType(mfrc522[reader].uid.sak);
                 Serial.println(mfrc522[reader].PICC_GetTypeName(piccType));*/
               // Halt PICC
+              check_voice();
               mfrc522[reader].PICC_HaltA();
+              check_voice();
               // Stop encryption on PCD
               mfrc522[reader].PCD_StopCrypto1();
+              check_voice();
           } //if (mfrc522[reader].PICC_IsNewC..
         } //for(uint8_t reader..
-        main_state = 1;
+
+        main_state = 0;
 }
 
 boolean check_result_rfid_letter(){
   return main_result == 1;
 }
 
+
+void check_voice (){
+  if (!voice_pressed) {
+    voice_pressed = digitalRead(VOICE_DI)==LOW;
+  }
+}
