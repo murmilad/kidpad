@@ -4,7 +4,7 @@
 #include <DFPlayerMini_Fast.h>
 
 
-// FRID
+// RFID
 #include <deprecated.h>
 #include <MFRC522Extended.h>
 #include <MFRC522.h>
@@ -77,7 +77,50 @@ byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN};
 MFRC522 mfrc522[NR_OF_READERS];
 
 byte letter_cards[][7] = {
-    {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80} // А
+  {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80}, // А
+  {0x04, 0x7E, 0xE7, 0xF2, 0xDD, 0x54, 0x81}, // Б
+  {0x34, 0x48, 0xAC, 0xA1, 0x47, 0xFE, 0xC6}, // В
+  {0x34, 0x58, 0x34, 0x71, 0x38, 0x03, 0xC7}, // Г
+  {0x34, 0x48, 0xAA, 0x51, 0x4A, 0xBC, 0xC6}, // Д
+  {0x04, 0x36, 0x2F, 0xB2, 0xD5, 0x54, 0x81}, // Е
+  {0x34, 0xC1, 0xF3, 0xB1, 0x76, 0x62, 0xA6}, // Ё
+  {0x34, 0x50, 0x6E, 0x51, 0xAE, 0x7B, 0xC6}, // Ж
+  {0x34, 0x50, 0x6F, 0x69, 0x4E, 0x06, 0xC6}, // З
+  {0x34, 0x50, 0x71, 0x29, 0x10, 0x6E, 0xC6}, // И
+  {0x34, 0x48, 0xA8, 0x29, 0x02, 0xDC, 0xC7}, // Й
+  {0x34, 0x50, 0x6E, 0x81, 0x11, 0xAD, 0xC6}, // К
+  {0x34, 0x50, 0x71, 0x29, 0x11, 0x1E, 0xC6}, // Л
+  {0x34, 0xD9, 0x63, 0xA1, 0x55, 0x89, 0xA7}, // М
+  {0x34, 0xC5, 0xDB, 0xC9, 0x1A, 0xBB, 0xA7}, // Н
+  {0x04, 0x87, 0x8A, 0x9A, 0x5E, 0x5D, 0x81}, // О
+  {0x34, 0x9E, 0x8D, 0x19, 0xDC, 0xA8, 0xC6}, // П
+  {0x04, 0xCF, 0x1E, 0x5A, 0x5C, 0x5D, 0x80}, // Р
+  {0x34, 0xC5, 0xDE, 0x41, 0xE3, 0x04, 0xA6}, // С
+  {0x04, 0xED, 0xCD, 0x32, 0x8E, 0x5D, 0x80}, // Т
+  {0x04, 0xC0, 0xAD, 0x1A, 0x0C, 0x61, 0x80}, // У
+  {0x04, 0xAF, 0x15, 0xA2, 0xDD, 0x54, 0x80}, // Ф
+  {0x34, 0xEF, 0x0D, 0x79, 0x42, 0x7D, 0x96}, // Х
+  {0x34, 0x48, 0xAB, 0x21, 0x21, 0x77, 0xC7}, // Ц
+  {0x04, 0xFC, 0x44, 0x6A, 0x0A, 0x61, 0x84}, // Ч
+  {0x34, 0xD9, 0x65, 0x59, 0x45, 0x68, 0xA7}, // Щ
+  {0x34, 0x48, 0xA8, 0x91, 0x47, 0x96, 0xC6}, // Ш
+  {0x04, 0xDE, 0x94, 0xEA, 0xD8, 0x54, 0x80}, // Ы
+  {0x34, 0x58, 0x37, 0x41, 0xEF, 0x7C, 0xC6}, // Э
+  {0x34, 0xD9, 0x63, 0xA1, 0x38, 0xA1, 0xA7}, // Ю
+  {0x34, 0xD9, 0x68, 0x69, 0x1C, 0x04, 0xA7} // Я
+};
+
+byte digit_cards[][7] = {
+  {0x04, 0x3D, 0x29, 0xAA, 0x0B, 0x61, 0x85}, // 1
+  {0x04, 0x10, 0x3F, 0xAA, 0xDD, 0x54, 0x85}, // 2
+  {0x04, 0x49, 0x6D, 0xE2, 0xD8, 0x54, 0x80}, // 3
+  {0x04, 0xE7, 0x32, 0xC2, 0xD8, 0x54, 0x84}, // 4
+  {0x04, 0x25, 0x10, 0xDA, 0xDD, 0x54, 0x85}, // 5
+  {0x34, 0xC1, 0xF3, 0x81, 0xE7, 0x81, 0xA6}, // 6
+  {0x04, 0x80, 0xBA, 0x0A, 0x8E, 0x5D, 0x81}, // 7
+  {0x34, 0x50, 0x71, 0x49, 0x51, 0x3A, 0xC7}, // 8
+  {0x04, 0x72, 0xB0, 0xC2, 0xDD, 0x54, 0x80}, // 9
+  {0x34, 0x48, 0xAB, 0xB9, 0x10, 0x88, 0xC6} // 0
 };
 
 // Voice
@@ -87,7 +130,7 @@ DFPlayerMini_Fast voice_mp3;
 
 // Main
 
-#define NUMBER_OF_FUNCTIONS 12
+#define NUMBER_OF_FUNCTIONS 14
 
 void (*get_functions[NUMBER_OF_FUNCTIONS])();
 void (*show_result_functions[NUMBER_OF_FUNCTIONS])();
@@ -159,9 +202,19 @@ void setup() {
   check_result_functions[10] = check_result_color;
 
   get_question_functions[11] = get_question_rfid_letter;
-  get_functions[11] = get_rfid;
+  get_functions[11] = get_rfid_letter;
   show_result_functions[11] = show_result_dummy;
-  check_result_functions[11] = check_result_rfid_letter;
+  check_result_functions[11] = check_result_rfid;
+
+  get_question_functions[12] = get_question_rfid_digit;
+  get_functions[12] = get_rfid_digit;
+  show_result_functions[12] = show_result_dummy;
+  check_result_functions[12] = check_result_rfid;
+
+  get_question_functions[13] = get_question_digit;
+  get_functions[13] = get_rotary_digit;
+  show_result_functions[13] = show_result_digit;
+  check_result_functions[13] = check_result_equal;
 
   pinMode(SIMPLE_DI,INPUT);
   digitalWrite(SIMPLE_DI,HIGH);
@@ -370,8 +423,8 @@ void setup() {
 
   voice_mp3.begin(voice_serial);
   
-  debug("Setting volume to max");
-  voice_mp3.volume(30);
+  debug("Setting volume to 60%");
+  voice_mp3.volume(5);
 
   
 
@@ -424,7 +477,7 @@ void loop()
         ask = false;
   
         if (operation == 0) {
-          operation = simple_mode ? random(11,12) : random(1,11);
+          operation = simple_mode ? random(10,14) : random(1,11);
         }
         debug( "get_question_functions:" );
         debug( operation );
@@ -658,6 +711,12 @@ boolean check_result_equal(){
 // color
 
 void get_question_color(){
+  voice_mp3.wakeUp();
+  voice_mp3.play(32);
+
+  delay(2000);
+  voice_mp3.sleep();
+
   String op = "";
   
   char charBufOperation1[150];
@@ -681,6 +740,21 @@ void get_question_color(){
 }
 
 void get_color (){
+  check_voice();
+  if (voice_pressed) {
+    debug("voice pressed");
+
+    voice_mp3.wakeUp();
+  
+    voice_mp3.play(42 + digit_1);
+
+    debug(42 + digit_1);
+    delay(2000);
+    voice_mp3.sleep();
+    voice_pressed = false;
+  } 
+
+  
   main_result = digitalRead(RED_DI)==LOW
                 ? 1
                 : digitalRead(YELLOW_DI)==LOW
@@ -692,7 +766,9 @@ void get_color (){
                       : digitalRead(BLACK_DI)==LOW
                         ? 5
                         : 0;
-  main_state = 1;
+  if (main_result != 0) {
+    main_state = 1;
+  }
 }
 
 void show_result_slash() {// 8, 10
@@ -729,6 +805,41 @@ void dump_byte_array(byte * buffer, byte bufferSize) {
 }
 
 void get_question_rfid_letter(){
+  get_question_rfid(32);
+}
+
+void get_rfid_letter() {
+        check_card(letter_cards, 0);
+}
+
+void get_question_rfid_digit(){
+  get_question_rfid(10);
+}
+
+void get_rfid_digit() {
+        check_card(digit_cards, 32);
+}
+
+boolean check_result_rfid(){
+  return main_result == 1;
+}
+
+
+void check_voice (){
+  if (!voice_pressed) {
+    voice_pressed = digitalRead(VOICE_DI)==LOW;
+  }
+}
+
+void get_question_rfid(int size){
+
+  voice_mp3.wakeUp();
+  voice_mp3.play(32);
+
+  delay(2000);
+  voice_mp3.sleep();
+
+  
   String op = "";
   
   char charBufOperation1[150];
@@ -740,7 +851,7 @@ void get_question_rfid_letter(){
   op.toCharArray(charBufOperation3, 150);
   
   
-  digit_1 = random(1, 1);
+  digit_1 = random(1, size+1);
   String("\x3f").toCharArray(charBufOperation2, 150); // ? "\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
   
   u8g.firstPage();  
@@ -750,16 +861,16 @@ void get_question_rfid_letter(){
   } while( u8g.nextPage() );
 }
 
-void get_rfid() {
-
+void check_card(byte cards[][7], int voice_shift) {
         check_voice();
         if (voice_pressed) {
           debug("voice pressed");
 
           voice_mp3.wakeUp();
-          voice_mp3.play(digit_1);
+        
+          voice_mp3.play(voice_shift + digit_1);
 
-          debug(digit_1);
+          debug(voice_shift + digit_1);
           delay(2000);
           voice_mp3.sleep();
           voice_pressed = false;
@@ -785,7 +896,7 @@ void get_rfid() {
         
               for (int i = 0; i < mfrc522[reader].uid.size; i++) {       //tagarray's columns
                 check_voice();
-                if ( mfrc522[reader].uid.uidByte[i] != letter_cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
+                if ( mfrc522[reader].uid.uidByte[i] != cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
                     main_state = 1;
                     main_result = 0;
                   return;
@@ -816,15 +927,56 @@ void get_rfid() {
         } //for(uint8_t reader..
 
         main_state = 0;
+
 }
 
-boolean check_result_rfid_letter(){
-  return main_result == 1;
+// Digit
+void get_question_digit(){
+  voice_mp3.wakeUp();
+  voice_mp3.play(32);
+
+  delay(2000);
+  voice_mp3.sleep();
+
+  String op = "";
+  
+  char charBufOperation1[150];
+  char charBufOperation2[150];
+  char charBufOperation3[150];
+  
+  op.toCharArray(charBufOperation1, 150);
+  op.toCharArray(charBufOperation2, 150);
+  op.toCharArray(charBufOperation3, 150);
+  
+  digit_1 = random(0, 10);
+  String(words[digit_1]).toCharArray(charBufOperation2, 150);
+  //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
+
+  u8g.firstPage();  
+  do {
+    u8g.setFont(u8g_font_osr21);
+    u8g.drawStr(10, 18 , charBufOperation1);
+    u8g.drawStr(10, 40 , charBufOperation2);
+    u8g.drawStr(10, 62 , charBufOperation3);
+  } while( u8g.nextPage() );
 }
 
+void get_rotary_digit () {
+    check_voice();
+    if (voice_pressed) {
+      debug("voice pressed");
 
-void check_voice (){
-  if (!voice_pressed) {
-    voice_pressed = digitalRead(VOICE_DI)==LOW;
-  }
+      voice_mp3.wakeUp();
+    
+      voice_mp3.play(32 + (digit_1 == 0 ? 10 : digit_1));
+
+      debug(32 + (digit_1 == 0 ? 10 : digit_1));
+      delay(2000);
+      voice_mp3.sleep();
+      voice_pressed = false;
+    } 
+    check_voice(); 
+
+    get_rotary();
 }
+
