@@ -28,6 +28,7 @@
 #define VOICE_DI 34
 #define OPEN_DI 27
 #define PRESSURE_AI A0
+#define RANDOM_AI A1
 
 boolean voice_pressed = false;
 
@@ -39,7 +40,7 @@ U8GLIB_SSD1306_128X64 u8g(7, 6, 5, 3, 2);
 
 int reading;
 int main_state = 0; // 0 reading; 1 check result
-int main_result;
+int main_result = 0;
 int lastState = LOW;
 int trueState = LOW;
 long lastStateChangeTime = 0;
@@ -70,6 +71,7 @@ boolean simple_mode = false;
 #define SS_4_PIN        33
 
 
+boolean had_cards = false;
 int tag_count = 0;
 
 #define NR_OF_READERS   4
@@ -150,6 +152,7 @@ void debug(int message) {
 }
 
 void setup() {
+  randomSeed(analogRead(RANDOM_AI));
 
   get_question_functions[1] = get_question_1;
   get_functions[1] = get_rotary;
@@ -287,7 +290,6 @@ void setup() {
   pinMode(ROTARY_IN, INPUT);
 
   // DOOR "\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ -F
-  randomSeed(analogRead(0));
   pinMode(DOOR_1, OUTPUT);
   words[0] = "\xBD\xBE\xBB\xCC";
   pans[0] = 20;
@@ -424,7 +426,7 @@ void setup() {
   voice_mp3.begin(voice_serial);
   
   debug("Setting volume to 60%");
-  voice_mp3.volume(5);
+  voice_mp3.volume(16);
 
   
 
@@ -467,7 +469,7 @@ void loop()
           delay(6000);
           digitalWrite(DOOR_1, LOW);
           operation = 0;
-        }
+        } 
   
         main_state = 0;
         main_result = 0;
@@ -479,8 +481,10 @@ void loop()
         if (operation == 0) {
           operation = simple_mode ? random(10,14) : random(1,11);
         }
+
         debug( "get_question_functions:" );
         debug( operation );
+
         get_question_functions[operation]();
       }
     } 
@@ -805,19 +809,21 @@ void dump_byte_array(byte * buffer, byte bufferSize) {
 }
 
 void get_question_rfid_letter(){
-  get_question_rfid(32);
+//  get_question_rfid(32);
+  get_question_rfid(2);
 }
 
 void get_rfid_letter() {
-        check_card(letter_cards, 0);
+        check_card(letter_cards, 0, 0);
 }
 
 void get_question_rfid_digit(){
-  get_question_rfid(10);
+//  get_question_rfid(10);
+  get_question_rfid(2);
 }
 
 void get_rfid_digit() {
-        check_card(digit_cards, 32);
+        check_card(digit_cards, 32, 50);
 }
 
 boolean check_result_rfid(){
@@ -861,15 +867,20 @@ void get_question_rfid(int size){
   } while( u8g.nextPage() );
 }
 
-void check_card(byte cards[][7], int voice_shift) {
+void check_card(byte cards[][7], int voice_shift, int voice_type) {
+        debug(main_result);
         check_voice();
         if (voice_pressed) {
           debug("voice pressed");
 
           voice_mp3.wakeUp();
         
-          voice_mp3.play(voice_shift + digit_1);
 
+          if (voice_type != 0) {
+            voice_mp3.play(voice_type);
+            delay(1700);
+          }
+          voice_mp3.play(voice_shift + digit_1);
           debug(voice_shift + digit_1);
           delay(2000);
           voice_mp3.sleep();
@@ -877,65 +888,88 @@ void check_card(byte cards[][7], int voice_shift) {
         } 
         check_voice(); 
           // RFID Loop
+        boolean has_cards = false;
+
         for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
           check_voice(); 
-
+          debug("reader");
+          debug(reader);
           // Looking for new cards
-          if (mfrc522[reader].PICC_IsNewCardPresent() && mfrc522[reader].PICC_ReadCardSerial()) {
-              check_voice();
-
-              if(DEBUG_SERIAL) {
-                Serial.print(F("Reader "));
-                Serial.print(reader);
-        
-              // Show some details of the PICC (that is: the tag/card)
-                Serial.print(F(": Card UID:"));
-                dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
-                Serial.println();
-              }
-        
-              for (int i = 0; i < mfrc522[reader].uid.size; i++) {       //tagarray's columns
+          if (mfrc522[reader].PICC_IsNewCardPresent()) {
+            debug("IsNewCardPresent" );
+            if (mfrc522[reader].PICC_ReadCardSerial()) {
+              
+              mfrc522[reader].PICC_IsNewCardPresent(); // reread is new card present for ignoring at next time
+              
+              has_cards = true;
+              debug("has_cards" );
+              debug(had_cards ? "had_cards yes" : " had_cards no");
+  
+              if (!had_cards) {
+  
                 check_voice();
-                if ( mfrc522[reader].uid.uidByte[i] != cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
-                    main_state = 1;
-                    main_result = 0;
-                  return;
-                } else {
-                  if (i == mfrc522[reader].uid.size - 1) {                // Test if we browesed the whole UID.
-                    main_state = 1;
-                    main_result = 1;
+  
+                if(DEBUG_SERIAL) {
+                  Serial.print(F("Reader "));
+                  Serial.print(reader);
+          
+                // Show some details of the PICC (that is: the tag/card)
+                  Serial.print(F(": Card UID:"));
+                  dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
+                  Serial.println();
+                }
+          
+                for (int i = 0; i < mfrc522[reader].uid.size; i++) {       //tagarray's columns
+                  check_voice();
+                  if ( mfrc522[reader].uid.uidByte[i] != cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
+                      main_state = 1;
+                      main_result = 0;
+                      had_cards = true;
                     return;
                   } else {
-                    continue;                                           // We still didn't reach the last cell/column : continue testing!
+                    if (i == mfrc522[reader].uid.size - 1) {                // Test if we browesed the whole UID.
+                      main_state = 1;
+                      main_result = 1;
+                      had_cards = true;
+                      return;
+                    } else {
+                      continue;                                           // We still didn't reach the last cell/column : continue testing!
+                    }
                   }
                 }
-              }
-
-              return;
-
-              /*Serial.print(F("PICC type: "));
-                MFRC522::PICC_Type piccType = mfrc522[reader].PICC_GetType(mfrc522[reader].uid.sak);
-                Serial.println(mfrc522[reader].PICC_GetTypeName(piccType));*/
-              // Halt PICC
-              check_voice();
-              mfrc522[reader].PICC_HaltA();
-              check_voice();
-              // Stop encryption on PCD
-              mfrc522[reader].PCD_StopCrypto1();
-              check_voice();
-          } //if (mfrc522[reader].PICC_IsNewC..
+  
+  
+                /*Serial.print(F("PICC type: "));
+                  MFRC522::PICC_Type piccType = mfrc522[reader].PICC_GetType(mfrc522[reader].uid.sak);
+                  Serial.println(mfrc522[reader].PICC_GetTypeName(piccType));*/
+                // Halt PICC
+                check_voice();
+                mfrc522[reader].PICC_HaltA();
+                check_voice();
+                // Stop encryption on PCD
+                mfrc522[reader].PCD_StopCrypto1();
+                check_voice();
+              } //  if (main_result..
+            } //if (mfrc522[reader].PICC_IsNewCa..
+          }
         } //for(uint8_t reader..
 
+        had_cards = has_cards;
+
+        debug(has_cards ? "has" : "has not");
+        
         main_state = 0;
 
 }
 
-// Digit
+// Rotary Audio Digit
+
 void get_question_digit(){
   voice_mp3.wakeUp();
   voice_mp3.play(32);
 
   delay(2000);
+
   voice_mp3.sleep();
 
   String op = "";
@@ -948,7 +982,8 @@ void get_question_digit(){
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
   
-  digit_1 = random(0, 10);
+//  digit_1 = random(0, 10);
+  digit_1 = random(1, 3);
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
@@ -967,6 +1002,9 @@ void get_rotary_digit () {
       debug("voice pressed");
 
       voice_mp3.wakeUp();
+      voice_mp3.play(49); // Набери
+
+      delay(1400);
     
       voice_mp3.play(32 + (digit_1 == 0 ? 10 : digit_1));
 
@@ -980,3 +1018,5 @@ void get_rotary_digit () {
     get_rotary();
 }
 
+// Количество белых
+// Категории (Овощи, Фрукты, Живые, Не живые)
