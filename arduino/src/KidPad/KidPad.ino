@@ -457,6 +457,16 @@ void loop()
         //delay(400);
         delay(1000);
         if (check_result_functions[operation]()) {
+
+          voice_mp3.wakeUp();
+          voice_mp3.play(51);
+        
+          delay(1000);
+        
+          voice_mp3.sleep();
+
+
+          
           digitalWrite(DOOR_1, HIGH);
           u8g.firstPage();  
           do {
@@ -469,7 +479,14 @@ void loop()
           delay(6000);
           digitalWrite(DOOR_1, LOW);
           operation = 0;
-        } 
+        }  else {
+          voice_mp3.wakeUp();
+          voice_mp3.play(52);
+        
+          delay(3000);
+        
+          voice_mp3.sleep();
+        }
   
         main_state = 0;
         main_result = 0;
@@ -810,7 +827,7 @@ void dump_byte_array(byte * buffer, byte bufferSize) {
 
 void get_question_rfid_letter(){
 //  get_question_rfid(32);
-  get_question_rfid(2);
+  get_question_rfid(5);
 }
 
 void get_rfid_letter() {
@@ -819,7 +836,7 @@ void get_rfid_letter() {
 
 void get_question_rfid_digit(){
 //  get_question_rfid(10);
-  get_question_rfid(2);
+  get_question_rfid(5);
 }
 
 void get_rfid_digit() {
@@ -983,7 +1000,7 @@ void get_question_digit(){
   op.toCharArray(charBufOperation3, 150);
   
 //  digit_1 = random(0, 10);
-  digit_1 = random(1, 3);
+  digit_1 = random(1, 6);
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
