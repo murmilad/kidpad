@@ -27,6 +27,7 @@
 #define SIMPLE_DI 28
 #define VOICE_DI 34
 #define OPEN_DI 27
+#define IR_DI 35
 #define PRESSURE_AI A0
 #define RANDOM_AI A1
 
@@ -56,6 +57,9 @@ String operations[2];
 boolean started = false;
 boolean ask = true;
 boolean simple_mode = false;
+boolean sleep_mode = false;
+boolean quiet_mode = false;
+boolean wake_mode = false;
 
 #define ROTARY_IN 4
 #define DOOR_1 8
@@ -69,6 +73,7 @@ boolean simple_mode = false;
 #define SS_2_PIN        31
 #define SS_3_PIN        32
 #define SS_4_PIN        33
+
 
 
 boolean had_cards = false;
@@ -227,6 +232,9 @@ void setup() {
 
   pinMode(OPEN_DI,INPUT);
   digitalWrite(OPEN_DI,HIGH);
+
+  pinMode(IR_DI,INPUT);
+  digitalWrite(IR_DI,HIGH);
 
   pinMode(PRESSURE_AI,INPUT);
 
@@ -443,10 +451,36 @@ void loop()
  
   simple_mode = digitalRead(SIMPLE_DI)==LOW;
 
+  sleep_mode = digitalRead(IR_DI)==LOW;
+
+  Serial.println(digitalRead(IR_DI));
+
+  
+
   if (digitalRead(OPEN_DI)==LOW) { // cower is open
 
-    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS) {
+    if (sleep_mode) {
+      // clear lcd 
+      u8g.firstPage(); 
+      do {
+       // do nothing
+      } while( u8g.nextPage() );
+      wake_mode = true;
+    } else if (wake_mode) {
+      ask = true;
+      quiet_mode = true;
+      wake_mode = false;
+    }
+
+    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS && !sleep_mode) {
     // the dial isn't being dialed, or has just finished being dialed.
+
+
+      if (analogRead(PRESSURE_AI) > 150) {
+          digitalWrite(DOOR_1, HIGH);
+          delay(1000);
+          digitalWrite(DOOR_1, LOW);
+      }
   
       if (main_state == 1) {
       // if it's only just finished being dialed, we need to send the number down the serial
@@ -458,6 +492,7 @@ void loop()
         delay(1000);
         if (check_result_functions[operation]()) {
 
+          
           voice_mp3.wakeUp();
           voice_mp3.play(51);
         
@@ -503,6 +538,7 @@ void loop()
         debug( operation );
 
         get_question_functions[operation]();
+        quiet_mode = false;
       }
     } 
   
@@ -732,11 +768,13 @@ boolean check_result_equal(){
 // color
 
 void get_question_color(){
-  voice_mp3.wakeUp();
-  voice_mp3.play(32);
-
-  delay(2000);
-  voice_mp3.sleep();
+  if (!quiet_mode) {
+    voice_mp3.wakeUp();
+    voice_mp3.play(32);
+  
+    delay(2000);
+    voice_mp3.sleep();
+  }
 
   String op = "";
   
@@ -856,11 +894,13 @@ void check_voice (){
 
 void get_question_rfid(int size){
 
-  voice_mp3.wakeUp();
-  voice_mp3.play(32);
-
-  delay(2000);
-  voice_mp3.sleep();
+  if (!quiet_mode) {
+    voice_mp3.wakeUp();
+    voice_mp3.play(32);
+  
+    delay(2000);
+    voice_mp3.sleep();
+  }
 
   
   String op = "";
@@ -982,12 +1022,15 @@ void check_card(byte cards[][7], int voice_shift, int voice_type) {
 // Rotary Audio Digit
 
 void get_question_digit(){
-  voice_mp3.wakeUp();
-  voice_mp3.play(32);
+  if (!quiet_mode) {
 
-  delay(2000);
-
-  voice_mp3.sleep();
+    voice_mp3.wakeUp();
+    voice_mp3.play(32);
+  
+    delay(2000);
+  
+    voice_mp3.sleep();
+  }
 
   String op = "";
   
