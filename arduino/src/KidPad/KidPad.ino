@@ -453,19 +453,21 @@ void loop()
 
   sleep_mode = digitalRead(IR_DI)==LOW;
 
-  Serial.println(digitalRead(IR_DI));
+  //Serial.println(digitalRead(IR_DI));
 
   
 
   if (digitalRead(OPEN_DI)==LOW) { // cower is open
 
-    if (sleep_mode) {
-      // clear lcd 
-      u8g.firstPage(); 
-      do {
-       // do nothing
-      } while( u8g.nextPage() );
-      wake_mode = true;
+    if (sleep_mode ) {
+      if (!wake_mode) {
+        // clear lcd 
+        u8g.firstPage(); 
+        do {
+         // do nothing
+        } while( u8g.nextPage() );
+        wake_mode = true;
+      }
     } else if (wake_mode) {
       ask = true;
       quiet_mode = true;
