@@ -1,3 +1,4 @@
+#include <TrueRandom.h>
 
 // Voice
 #include <SoftwareSerial.h>
@@ -60,6 +61,8 @@ boolean simple_mode = false;
 boolean sleep_mode = false;
 boolean quiet_mode = false;
 boolean wake_mode = false;
+boolean randomize_mode = true;
+boolean correct_answer = false;
 
 #define ROTARY_IN 4
 #define DOOR_1 8
@@ -492,7 +495,9 @@ void loop()
   
         //delay(400);
         delay(1000);
-        if (check_result_functions[operation]()) {
+
+        correct_answer = check_result_functions[operation]();
+        if (correct_answer) {
 
           
           voice_mp3.wakeUp();
@@ -516,6 +521,7 @@ void loop()
           delay(6000);
           digitalWrite(DOOR_1, LOW);
           operation = 0;
+          randomize_mode = true;
         }  else {
           voice_mp3.wakeUp();
           voice_mp3.play(52);
@@ -523,6 +529,7 @@ void loop()
           delay(3000);
         
           voice_mp3.sleep();
+          randomize_mode = !simple_mode;
         }
   
         main_state = 0;
@@ -533,7 +540,7 @@ void loop()
         ask = false;
   
         if (operation == 0) {
-          operation = simple_mode ? random(10,14) : random(1,11);
+          operation = simple_mode ? TrueRandom.random(10,14) : TrueRandom.random(1,11);
         }
 
         debug( "get_question_functions:" );
@@ -541,6 +548,7 @@ void loop()
 
         get_question_functions[operation]();
         quiet_mode = false;
+
       }
     } 
   
@@ -567,8 +575,10 @@ void get_question_1(){
   op.toCharArray(charBufOperation3, 150);
 
 
-  digit_1 = random(1, 9);
-  digit_2 = random(1, 10 - digit_1);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, 9);
+    digit_2 = TrueRandom.random(1, 10 - digit_1);
+  }
   (String(digit_1) + "+" +  String(digit_2)).toCharArray(charBufOperation2, 150);
 
   u8g.firstPage();  
@@ -590,8 +600,10 @@ void get_question_2(){
   op.toCharArray(charBufOperation3, 150);
   
   
-  digit_1 = random(1, 10);
-  digit_2 = random(1, digit_1);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, 10);
+    digit_2 = TrueRandom.random(1, digit_1);
+  }
   (String(digit_1) + "-" +  String(digit_2)).toCharArray(charBufOperation2, 150);
   
   u8g.firstPage();  
@@ -614,8 +626,10 @@ void get_question_3(){
   op.toCharArray(charBufOperation3, 150);
   
   
-  digit_1 = random(1, 9);
-  digit_2 = random(1, 10 - digit_1);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, 9);
+    digit_2 = TrueRandom.random(1, 10 - digit_1);
+  }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[0]).toCharArray(charBufOperation2, 150);
   (words[digit_2]).toCharArray(charBufOperation3, 150);
@@ -642,8 +656,10 @@ void get_question_4(){
   op.toCharArray(charBufOperation3, 150);
   
   
-  digit_1 = random(1, 10);
-  digit_2 = random(1, digit_1);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, 10);
+    digit_2 = TrueRandom.random(1, digit_1);
+  }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[1]).toCharArray(charBufOperation2, 150);
   (words[digit_2]).toCharArray(charBufOperation3, 150);
@@ -668,7 +684,9 @@ void get_question_5(){
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
   
-  digit_1 = random(0, 9);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(0, 9);
+  }
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
@@ -692,7 +710,9 @@ void get_question_equal(){
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
   
-  digit_1 = random(1, operation == 9 ? 8 : 10);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, operation == 9 ? 8 : 10);
+  }
   String(words[digit_1 + 10 * (operation - 5)]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
   
@@ -788,7 +808,9 @@ void get_question_color(){
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
   
-  digit_1 = random(1, 6);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, 6);
+  }
   String(colors[digit_1-1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
@@ -916,7 +938,11 @@ void get_question_rfid(int size){
   op.toCharArray(charBufOperation3, 150);
   
   
-  digit_1 = random(1, size+1);
+  if (!quiet_mode && randomize_mode) {
+    digit_1 = TrueRandom.random(1, size+1);
+    debug("get digit");
+    debug(digit_1);
+  }
   String("\x3f").toCharArray(charBufOperation2, 150); // ? "\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
   
   u8g.firstPage();  
@@ -927,7 +953,6 @@ void get_question_rfid(int size){
 }
 
 void check_card(byte cards[][7], int voice_shift, int voice_type) {
-        debug(main_result);
         check_voice();
         if (voice_pressed) {
           debug("voice pressed");
@@ -951,18 +976,13 @@ void check_card(byte cards[][7], int voice_shift, int voice_type) {
 
         for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
           check_voice(); 
-          debug("reader");
-          debug(reader);
           // Looking for new cards
           if (mfrc522[reader].PICC_IsNewCardPresent()) {
-            debug("IsNewCardPresent" );
             if (mfrc522[reader].PICC_ReadCardSerial()) {
               
               mfrc522[reader].PICC_IsNewCardPresent(); // reread is new card present for ignoring at next time
               
               has_cards = true;
-              debug("has_cards" );
-              debug(had_cards ? "had_cards yes" : " had_cards no");
   
               if (!had_cards) {
   
@@ -1015,7 +1035,6 @@ void check_card(byte cards[][7], int voice_shift, int voice_type) {
 
         had_cards = has_cards;
 
-        debug(has_cards ? "has" : "has not");
         
         main_state = 0;
 
@@ -1044,8 +1063,12 @@ void get_question_digit(){
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
   
-//  digit_1 = random(0, 10);
-  digit_1 = random(1, 6);
+  if (!quiet_mode && randomize_mode) {
+//    digit_1 = TrueRandom.random(0, 10);
+    digit_1 = TrueRandom.random(1, 6);
+    debug("get digit");
+    debug(digit_1);
+  }
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
