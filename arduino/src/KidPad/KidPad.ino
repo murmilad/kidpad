@@ -1,4 +1,3 @@
-#include <TrueRandom.h>
 
 // Voice
 #include <SoftwareSerial.h>
@@ -30,7 +29,7 @@
 #define OPEN_DI 27
 #define IR_DI 35
 #define PRESSURE_AI A0
-#define RANDOM_AI A1
+#define RANDOM_AI A2
 
 boolean voice_pressed = false;
 
@@ -540,7 +539,7 @@ void loop()
         ask = false;
   
         if (operation == 0) {
-          operation = simple_mode ? TrueRandom.random(10,14) : TrueRandom.random(1,11);
+          operation = simple_mode ? random(10,14) : random(1,11);
         }
 
         debug( "get_question_functions:" );
@@ -576,8 +575,8 @@ void get_question_1(){
 
 
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, 9);
-    digit_2 = TrueRandom.random(1, 10 - digit_1);
+    digit_1 = random(1, 9);
+    digit_2 = random(1, 10 - digit_1);
   }
   (String(digit_1) + "+" +  String(digit_2)).toCharArray(charBufOperation2, 150);
 
@@ -601,8 +600,8 @@ void get_question_2(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, 10);
-    digit_2 = TrueRandom.random(1, digit_1);
+    digit_1 = random(1, 10);
+    digit_2 = random(1, digit_1);
   }
   (String(digit_1) + "-" +  String(digit_2)).toCharArray(charBufOperation2, 150);
   
@@ -627,8 +626,8 @@ void get_question_3(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, 9);
-    digit_2 = TrueRandom.random(1, 10 - digit_1);
+    digit_1 = random(1, 9);
+    digit_2 = random(1, 10 - digit_1);
   }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[0]).toCharArray(charBufOperation2, 150);
@@ -657,8 +656,8 @@ void get_question_4(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, 10);
-    digit_2 = TrueRandom.random(1, digit_1);
+    digit_1 = random(1, 10);
+    digit_2 = random(1, digit_1);
   }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[1]).toCharArray(charBufOperation2, 150);
@@ -685,7 +684,7 @@ void get_question_5(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(0, 9);
+    digit_1 = random(0, 9);
   }
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
@@ -711,7 +710,7 @@ void get_question_equal(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, operation == 9 ? 8 : 10);
+    digit_1 = random(1, operation == 9 ? 8 : 10);
   }
   String(words[digit_1 + 10 * (operation - 5)]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
@@ -809,7 +808,7 @@ void get_question_color(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, 6);
+    digit_1 = random(1, 6);
   }
   String(colors[digit_1-1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
@@ -939,7 +938,7 @@ void get_question_rfid(int size){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = TrueRandom.random(1, size+1);
+    digit_1 = random(1, size+1);
     debug("get digit");
     debug(digit_1);
   }
@@ -1064,8 +1063,8 @@ void get_question_digit(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-//    digit_1 = TrueRandom.random(0, 10);
-    digit_1 = TrueRandom.random(1, 6);
+//    digit_1 = random(0, 10);
+    digit_1 = random(1, 6);
     debug("get digit");
     debug(digit_1);
   }
