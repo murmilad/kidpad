@@ -1,4 +1,13 @@
 
+
+
+// Time
+
+#include <RTClib.h>
+#include <Time.h>
+#include <Wire.h>
+#include <math.h>
+
 // Voice
 #include <SoftwareSerial.h>
 #include <DFPlayerMini_Fast.h>
@@ -33,9 +42,39 @@
 
 boolean voice_pressed = false;
 
+// Time
+RTC_DS3231 rtc;
+#define DS3231_I2C_ADDRESS 0x68
+
+const int MILLIS_PIN = 2; // use any digital pin you need.
+ int random32khz ;  // volatile important here since we're changing this variable inside an interrupt service routine:
+
+// Функция обработки прерывания (ISR)
+void rtc_interrupt ()
+{
+    if(random32khz == 999)  // roll over to zero
+        random32khz = 0;
+    else 
+        ++random32khz;
+
+}  // end of rtc_interrupt
+
+int clock_random(int from, int to){
+  
+  float interval = to - from;
+   
+  int result = from + trunc(interval * random32khz / 1000);
+  
+  DateTime now = rtc.now();
+ 
+  random32khz = round(now.second()*16.9);
+
+  return result;
+
+}
 
 //D0 D1 CS A0 RESET
-U8GLIB_SSD1306_128X64 u8g(7, 6, 5, 3, 2);
+U8GLIB_SSD1306_128X64 u8g(7, 6, 5, 13, 12);
 
 // ROTARY
 
@@ -63,7 +102,7 @@ boolean wake_mode = false;
 boolean randomize_mode = true;
 boolean correct_answer = false;
 
-#define ROTARY_IN 4
+#define ROTARY_IN 4 //35 to end check
 #define DOOR_1 8
 #define FINISHED_AFTER_MS 100
 #define DEBOUNCE_DELAY 10
@@ -134,7 +173,7 @@ byte digit_cards[][7] = {
 
 // Voice
 
-SoftwareSerial voice_serial(10, 11); // RX, TX
+SoftwareSerial voice_serial(10, 36); // RX, TX
 DFPlayerMini_Fast voice_mp3;
 
 // Main
@@ -159,7 +198,9 @@ void debug(int message) {
 }
 
 void setup() {
-  randomSeed(analogRead(RANDOM_AI));
+
+  debug("setup");
+//  randomSeed(analogRead(RANDOM_AI));
 
   get_question_functions[1] = get_question_1;
   get_functions[1] = get_rotary;
@@ -246,6 +287,54 @@ void setup() {
     Serial.begin(115200);           // Initialize serial communications with the PC
     while (!Serial);              // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
   }
+
+  // Time
+
+
+  if (! rtc.begin()) {
+    Serial.println("Couldn't find RTC");
+    Serial.flush();
+    abort();
+  }
+
+  if (rtc.lostPower()) {
+    Serial.println("RTC lost power, let's set the time!");
+    // When time needs to be set on a new device, or after a power loss, the
+    // following line sets the RTC to the date & time this sketch was compiled
+    //rtc.adjust(DateTime(2020,11,23,01,10,00));
+    // This line sets the RTC with an explicit date & time, for example to set
+    // January 21, 2014 at 3am you would call:
+    // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+  }
+
+  //rtc.adjust(DateTime(2020,11,23,23,58,00));
+
+
+
+//  Wire.beginTransmission(DS3231_I2C_ADDRESS);
+//  Wire.write(0x0E);
+//  Wire.write(B00000000);
+//  Wire.endTransmission();
+
+//    pinMode(MILLIS_PIN, INPUT);
+    // Global Enable INT0 interrupt
+//    EIMSK |= ( 1 << INT0);
+    // Signal change triggers interrupt
+//    EICRA |= ( 1 << ISC00);
+//    EICRA |= ( 0 << ISC01);
+  // set up to handle interrupt from 1 Hz pin
+ DateTime now = rtc.now();
+ 
+  random32khz = round(now.second()*16.9);
+  debug(random32khz);
+  pinMode (MILLIS_PIN, INPUT);
+  attachInterrupt (digitalPinToInterrupt (MILLIS_PIN), rtc_interrupt, CHANGE);
+
+  // Time
+  if (DEBUG_SERIAL ) {
+    digitalClockDisplay();
+  }
+
 
 
   // RFID
@@ -436,16 +525,14 @@ void setup() {
   voice_mp3.begin(voice_serial);
   
   debug("Setting volume to 60%");
-  voice_mp3.volume(16);
+  voice_mp3.volume(3); //16
 
-  
 
 }
 
 void loop() 
-{
- 
-  // Rotary
+{ 
+   // Rotary
   reading = digitalRead(ROTARY_IN);
 
          
@@ -474,6 +561,24 @@ void loop()
       ask = true;
       quiet_mode = true;
       wake_mode = false;
+
+      DateTime now = rtc.now();
+
+      if (operation != 0 && now.hour() > 10 && now.hour() < 22 && clock_random(1,4)==3){
+          if (clock_random(0,2) == 1) {
+            voice_mp3.wakeUp();
+            voice_mp3.play(clock_random(0,2) == 1 ? 51 : 32);
+          
+            delay(2000);
+          
+            voice_mp3.sleep();
+          } else {
+            if (operation != 0) {
+              voice_pressed = true;
+              get_functions[operation]();
+            }
+          }
+      } 
     }
 
     if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS && !sleep_mode) {
@@ -538,8 +643,8 @@ void loop()
       } else if (ask){
         ask = false;
   
-        if (operation == 0) {
-          operation = simple_mode ? random(10,14) : random(1,11);
+        if (operation == 0) {//clock_random(10,14)
+          operation = simple_mode ? clock_random(11,14) : clock_random(1,11);
         }
 
         debug( "get_question_functions:" );
@@ -550,11 +655,37 @@ void loop()
 
       }
     } 
-  
-    get_functions[operation]();
+
+    if (operation != 0 && !sleep_mode) {
+      get_functions[operation]();
+    }
   } else {
     debug(analogRead(PRESSURE_AI));
   }
+
+}
+
+void digitalClockDisplay(){
+  DateTime now = rtc.now();
+  // digital clock display of the time
+  Serial.print(now.hour());
+  printDigits(now.minute());
+  printDigits(now.second());
+  Serial.print(" ");
+  Serial.print(now.day());
+  Serial.print(" ");
+  Serial.print(now.month());
+  Serial.print(" ");
+  Serial.print(now.year()); 
+  Serial.println(); 
+}
+ 
+void printDigits(int digits){
+  // utility function for digital clock display: prints preceding colon and leading 0
+  Serial.print(":");
+  if(digits < 10)
+    Serial.print('0');
+  Serial.print(digits);
 }
 
 void get_dummy() {
@@ -575,8 +706,8 @@ void get_question_1(){
 
 
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, 9);
-    digit_2 = random(1, 10 - digit_1);
+    digit_1 = clock_random(1, 9);
+    digit_2 = clock_random(1, 10 - digit_1);
   }
   (String(digit_1) + "+" +  String(digit_2)).toCharArray(charBufOperation2, 150);
 
@@ -600,8 +731,8 @@ void get_question_2(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, 10);
-    digit_2 = random(1, digit_1);
+    digit_1 = clock_random(1, 10);
+    digit_2 = clock_random(1, digit_1);
   }
   (String(digit_1) + "-" +  String(digit_2)).toCharArray(charBufOperation2, 150);
   
@@ -626,8 +757,8 @@ void get_question_3(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, 9);
-    digit_2 = random(1, 10 - digit_1);
+    digit_1 = clock_random(1, 9);
+    digit_2 = clock_random(1, 10 - digit_1);
   }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[0]).toCharArray(charBufOperation2, 150);
@@ -656,8 +787,8 @@ void get_question_4(){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, 10);
-    digit_2 = random(1, digit_1);
+    digit_1 = clock_random(1, 10);
+    digit_2 = clock_random(1, digit_1);
   }
   (words[digit_1]).toCharArray(charBufOperation1, 150);
   (operations[1]).toCharArray(charBufOperation2, 150);
@@ -684,7 +815,7 @@ void get_question_5(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(0, 9);
+    digit_1 = clock_random(0, 9);
   }
   String(words[digit_1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
@@ -710,7 +841,7 @@ void get_question_equal(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, operation == 9 ? 8 : 10);
+    digit_1 = clock_random(1, operation == 9 ? 8 : 10);
   }
   String(words[digit_1 + 10 * (operation - 5)]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
@@ -806,10 +937,12 @@ void get_question_color(){
   op.toCharArray(charBufOperation1, 150);
   op.toCharArray(charBufOperation2, 150);
   op.toCharArray(charBufOperation3, 150);
-  
+  debug("digit_1");
+  debug(digit_1);
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, 6);
+    digit_1 = clock_random(1, 6);
   }
+  debug(digit_1);
   String(colors[digit_1-1]).toCharArray(charBufOperation2, 150);
   //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
 
@@ -938,7 +1071,7 @@ void get_question_rfid(int size){
   
   
   if (!quiet_mode && randomize_mode) {
-    digit_1 = random(1, size+1);
+    digit_1 = clock_random(1, size+1);
     debug("get digit");
     debug(digit_1);
   }
@@ -1063,8 +1196,8 @@ void get_question_digit(){
   op.toCharArray(charBufOperation3, 150);
   
   if (!quiet_mode && randomize_mode) {
-//    digit_1 = random(0, 10);
-    digit_1 = random(1, 6);
+//    digit_1 = clock_random(0, 10);
+    digit_1 = clock_random(1, 6);
     debug("get digit");
     debug(digit_1);
   }
