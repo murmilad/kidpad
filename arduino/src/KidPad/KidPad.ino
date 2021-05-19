@@ -109,15 +109,16 @@ boolean correct_answer = false;
 
 // RFID
 
+unsigned long scan_rfid_time = 0;
 #define RST_PIN 9
-#define SS_1_PIN        30
-#define SS_2_PIN        31
-#define SS_3_PIN        32
-#define SS_4_PIN        33
+#define SS_1_PIN        33 //32 3
+#define SS_2_PIN        32 //31 0
+#define SS_3_PIN        31 //30 1
+#define SS_4_PIN        30 //33 2
 
 
 
-boolean had_cards = false;
+
 int tag_count = 0;
 
 #define NR_OF_READERS   4
@@ -125,37 +126,37 @@ byte ssPins[] = {SS_1_PIN, SS_2_PIN, SS_3_PIN, SS_4_PIN};
 MFRC522 mfrc522[NR_OF_READERS];
 
 byte letter_cards[][7] = {
-  {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80}, // А
-  {0x04, 0x7E, 0xE7, 0xF2, 0xDD, 0x54, 0x81}, // Б
-  {0x34, 0x48, 0xAC, 0xA1, 0x47, 0xFE, 0xC6}, // В
-  {0x34, 0x58, 0x34, 0x71, 0x38, 0x03, 0xC7}, // Г
-  {0x34, 0x48, 0xAA, 0x51, 0x4A, 0xBC, 0xC6}, // Д
-  {0x04, 0x36, 0x2F, 0xB2, 0xD5, 0x54, 0x81}, // Е
-  {0x34, 0xC1, 0xF3, 0xB1, 0x76, 0x62, 0xA6}, // Ё
-  {0x34, 0x50, 0x6E, 0x51, 0xAE, 0x7B, 0xC6}, // Ж
-  {0x34, 0x50, 0x6F, 0x69, 0x4E, 0x06, 0xC6}, // З
-  {0x34, 0x50, 0x71, 0x29, 0x10, 0x6E, 0xC6}, // И
-  {0x34, 0x48, 0xA8, 0x29, 0x02, 0xDC, 0xC7}, // Й
-  {0x34, 0x50, 0x6E, 0x81, 0x11, 0xAD, 0xC6}, // К
-  {0x34, 0x50, 0x71, 0x29, 0x11, 0x1E, 0xC6}, // Л
-  {0x34, 0xD9, 0x63, 0xA1, 0x55, 0x89, 0xA7}, // М
-  {0x34, 0xC5, 0xDB, 0xC9, 0x1A, 0xBB, 0xA7}, // Н
-  {0x04, 0x87, 0x8A, 0x9A, 0x5E, 0x5D, 0x81}, // О
-  {0x34, 0x9E, 0x8D, 0x19, 0xDC, 0xA8, 0xC6}, // П
-  {0x04, 0xCF, 0x1E, 0x5A, 0x5C, 0x5D, 0x80}, // Р
-  {0x34, 0xC5, 0xDE, 0x41, 0xE3, 0x04, 0xA6}, // С
-  {0x04, 0xED, 0xCD, 0x32, 0x8E, 0x5D, 0x80}, // Т
-  {0x04, 0xC0, 0xAD, 0x1A, 0x0C, 0x61, 0x80}, // У
-  {0x04, 0xAF, 0x15, 0xA2, 0xDD, 0x54, 0x80}, // Ф
-  {0x34, 0xEF, 0x0D, 0x79, 0x42, 0x7D, 0x96}, // Х
-  {0x34, 0x48, 0xAB, 0x21, 0x21, 0x77, 0xC7}, // Ц
-  {0x04, 0xFC, 0x44, 0x6A, 0x0A, 0x61, 0x84}, // Ч
-  {0x34, 0xD9, 0x65, 0x59, 0x45, 0x68, 0xA7}, // Щ
-  {0x34, 0x48, 0xA8, 0x91, 0x47, 0x96, 0xC6}, // Ш
-  {0x04, 0xDE, 0x94, 0xEA, 0xD8, 0x54, 0x80}, // Ы
-  {0x34, 0x58, 0x37, 0x41, 0xEF, 0x7C, 0xC6}, // Э
-  {0x34, 0xD9, 0x63, 0xA1, 0x38, 0xA1, 0xA7}, // Ю
-  {0x34, 0xD9, 0x68, 0x69, 0x1C, 0x04, 0xA7} // Я
+  {0x04, 0x63, 0xF3, 0xEA, 0xDA, 0x5F, 0x80}, // А 1
+  {0x04, 0x7E, 0xE7, 0xF2, 0xDD, 0x54, 0x81}, // Б 2
+  {0x34, 0x48, 0xAC, 0xA1, 0x47, 0xFE, 0xC6}, // В 3
+  {0x34, 0x58, 0x34, 0x71, 0x38, 0x03, 0xC7}, // Г 4
+  {0x34, 0x48, 0xAA, 0x51, 0x4A, 0xBC, 0xC6}, // Д 5
+  {0x04, 0x36, 0x2F, 0xB2, 0xD5, 0x54, 0x81}, // Е 6
+  {0x34, 0xC1, 0xF3, 0xB1, 0x76, 0x62, 0xA6}, // Ё 7
+  {0x34, 0x50, 0x6E, 0x51, 0xAE, 0x7B, 0xC6}, // Ж 8
+  {0x34, 0x50, 0x6F, 0x69, 0x4E, 0x06, 0xC6}, // З 9
+  {0x34, 0x50, 0x71, 0x29, 0x10, 0x6E, 0xC6}, // И 10
+  {0x34, 0x48, 0xA8, 0x29, 0x02, 0xDC, 0xC7}, // Й 11
+  {0x34, 0x50, 0x6E, 0x81, 0x11, 0xAD, 0xC6}, // К 12
+  {0x34, 0x50, 0x71, 0x29, 0x11, 0x1E, 0xC6}, // Л 13
+  {0x34, 0xD9, 0x63, 0xA1, 0x55, 0x89, 0xA7}, // М 14
+  {0x34, 0xC5, 0xDB, 0xC9, 0x1A, 0xBB, 0xA7}, // Н 15
+  {0x04, 0x87, 0x8A, 0x9A, 0x5E, 0x5D, 0x81}, // О 16
+  {0x34, 0x9E, 0x8D, 0x19, 0xDC, 0xA8, 0xC6}, // П 17
+  {0x04, 0xCF, 0x1E, 0x5A, 0x5C, 0x5D, 0x80}, // Р 18
+  {0x34, 0xC5, 0xDE, 0x41, 0xE3, 0x04, 0xA6}, // С 19
+  {0x04, 0xED, 0xCD, 0x32, 0x8E, 0x5D, 0x80}, // Т 20
+  {0x04, 0xC0, 0xAD, 0x1A, 0x0C, 0x61, 0x80}, // У 21
+  {0x04, 0xAF, 0x15, 0xA2, 0xDD, 0x54, 0x80}, // Ф 22
+  {0x34, 0xEF, 0x0D, 0x79, 0x42, 0x7D, 0x96}, // Х 23
+  {0x34, 0x48, 0xAB, 0x21, 0x21, 0x77, 0xC7}, // Ц 24
+  {0x04, 0xFC, 0x44, 0x6A, 0x0A, 0x61, 0x84}, // Ч 25
+  {0x34, 0xD9, 0x65, 0x59, 0x45, 0x68, 0xA7}, // Щ 26
+  {0x34, 0x48, 0xA8, 0x91, 0x47, 0x96, 0xC6}, // Ш 27
+  {0x04, 0xDE, 0x94, 0xEA, 0xD8, 0x54, 0x80}, // Ы 28
+  {0x34, 0x58, 0x37, 0x41, 0xEF, 0x7C, 0xC6}, // Э 29
+  {0x34, 0xD9, 0x63, 0xA1, 0x38, 0xA1, 0xA7}, // Ю 30
+  {0x34, 0xD9, 0x68, 0x69, 0x1C, 0x04, 0xA7}  // Я 31
 };
 
 byte digit_cards[][7] = {
@@ -171,6 +172,11 @@ byte digit_cards[][7] = {
   {0x34, 0x48, 0xAB, 0xB9, 0x10, 0x88, 0xC6} // 0
 };
 
+int word_cards[][4] = {
+  {5, 1, 0, 0}, // ДА
+  {4, 1, 5, 0}, // ГАД
+};
+
 // Voice
 
 SoftwareSerial voice_serial(10, 36); // RX, TX
@@ -178,7 +184,7 @@ DFPlayerMini_Fast voice_mp3;
 
 // Main
 
-#define NUMBER_OF_FUNCTIONS 14
+#define NUMBER_OF_FUNCTIONS 15
 
 void (*get_functions[NUMBER_OF_FUNCTIONS])();
 void (*show_result_functions[NUMBER_OF_FUNCTIONS])();
@@ -197,9 +203,16 @@ void debug(int message) {
   }
 }
 
+void debug(boolean message) {
+  if (DEBUG_SERIAL) {
+    Serial.println(message);
+  }
+}
+
 void setup() {
 
   debug("setup");
+
 //  randomSeed(analogRead(RANDOM_AI));
 
   get_question_functions[1] = get_question_1;
@@ -267,6 +280,11 @@ void setup() {
   show_result_functions[13] = show_result_digit;
   check_result_functions[13] = check_result_equal;
 
+  get_question_functions[14] = get_question_rfid_word;
+  get_functions[14] = get_rfid_word;
+  show_result_functions[14] = show_result_dummy;
+  check_result_functions[14] = check_result_rfid;
+
   pinMode(SIMPLE_DI,INPUT);
   digitalWrite(SIMPLE_DI,HIGH);
 
@@ -301,7 +319,7 @@ void setup() {
     Serial.println("RTC lost power, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-    //rtc.adjust(DateTime(2020,11,23,01,10,00));
+    rtc.adjust(DateTime(2021,05,20,01,01,34));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
@@ -338,18 +356,29 @@ void setup() {
 
 
   // RFID
+  scan_rfid_time = millis();
 
   SPI.begin();                  // Init SPI bus
 
   /* looking for MFRC522 readers */
+  //https://forum.arduino.cc/t/extend-range-for-mfrc522-rfid-reader/194878/3
+  //byte RFCfgReg = 0x26 << 1; // configures the receiver gain
   for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
     mfrc522[reader].PCD_Init(ssPins[reader], RST_PIN);
+    mfrc522[reader].PCD_AntennaOff();
+    mfrc522[reader].PCD_SetAntennaGain(0x07<<4);
+    mfrc522[reader].PCD_WriteRegister(mfrc522[reader].RFCfgReg, (0x07<<4)); // Set Rx Gain to max
+
+//    mfrc522[reader].PCD_AntennaOff();
+//    mfrc522[reader].PCD_AntennaOn();
   
     if (DEBUG_SERIAL) {
       Serial.print(F("Reader "));
       Serial.print(reader);
-      Serial.print(F(": "));
-      mfrc522[reader].PCD_DumpVersionToSerial();
+      Serial.print(F(": AntennaGain = "));
+    mfrc522[reader].PCD_SetAntennaGain(0x07<<4);
+      Serial.println(mfrc522[reader].PCD_GetAntennaGain());
+   //   mfrc522[reader].PCD_DumpVersionToSerial();
     }
 
     
@@ -525,8 +554,17 @@ void setup() {
   voice_mp3.begin(voice_serial);
   
   debug("Setting volume to 60%");
-  voice_mp3.volume(3); //16
+  voice_mp3.volume(16); //16
 
+  wake_mode = false;
+  started = false;
+  ask = true;
+  simple_mode = false;
+  sleep_mode = false;
+  quiet_mode = false;
+  wake_mode = false;
+  randomize_mode = true;
+  correct_answer = false;
 
 }
 
@@ -540,7 +578,6 @@ void loop()
  
   simple_mode = digitalRead(SIMPLE_DI)==LOW;
 
-  sleep_mode = digitalRead(IR_DI)==LOW;
 
   //Serial.println(digitalRead(IR_DI));
 
@@ -548,116 +585,120 @@ void loop()
 
   if (digitalRead(OPEN_DI)==LOW) { // cower is open
 
-    if (sleep_mode ) {
-      if (!wake_mode) {
-        // clear lcd 
-        u8g.firstPage(); 
-        do {
-         // do nothing
-        } while( u8g.nextPage() );
-        wake_mode = true;
+    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS){
+  
+      if (sleep_mode ) {
+        if (!wake_mode) {
+          // clear lcd 
+          u8g.firstPage(); 
+          do {
+           // do nothing
+          } while( u8g.nextPage() );
+          wake_mode = true;
+        }
+      } else if (wake_mode) {
+        ask = true;
+        quiet_mode = true;
+        wake_mode = false;
+  
+        DateTime now = rtc.now();
+  
+        if (operation != 0 && now.hour() >= 10 && now.hour() < 22 && clock_random(1,13)==3){
+            if (clock_random(0,2) == 1) {
+              voice_mp3.wakeUp();
+              voice_mp3.play(clock_random(0,2) == 1 ? 51 : 32);
+            
+              delay(2000);
+            
+              voice_mp3.sleep();
+            } else {
+              if (operation != 0) {
+                voice_pressed = true;
+                get_functions[operation]();
+              }
+            }
+        } 
       }
-    } else if (wake_mode) {
-      ask = true;
-      quiet_mode = true;
-      wake_mode = false;
-
-      DateTime now = rtc.now();
-
-      if (operation != 0 && now.hour() > 10 && now.hour() < 22 && clock_random(1,4)==3){
-          if (clock_random(0,2) == 1) {
+      if (!sleep_mode) {
+      // the dial isn't being dialed, or has just finished being dialed.
+  
+  
+        if (analogRead(PRESSURE_AI) > 150) {
+            digitalWrite(DOOR_1, HIGH);
+            delay(1000);
+            digitalWrite(DOOR_1, LOW);
+        }
+    
+        if (main_state == 1) {
+        // if it's only just finished being dialed, we need to send the number down the serial
+        // line and reset the main_result. We mod the main_result by 10 because '0' will send 10 pulses.
+    
+          show_result_functions[operation]();
+    
+          //delay(400);
+          delay(1000);
+  
+          correct_answer = check_result_functions[operation]();
+          if (correct_answer) {
+  
+            
             voice_mp3.wakeUp();
-            voice_mp3.play(clock_random(0,2) == 1 ? 51 : 32);
+            voice_mp3.play(51);
           
-            delay(2000);
+            delay(1000);
           
             voice_mp3.sleep();
-          } else {
-            if (operation != 0) {
-              voice_pressed = true;
-              get_functions[operation]();
-            }
+  
+  
+            
+            digitalWrite(DOOR_1, HIGH);
+            u8g.firstPage();  
+            do {
+              char charBufVar[150];
+              String(main_result % 10).toCharArray(charBufVar, 150);
+              u8g.setFont(u8g_font_osr35);
+              String("\x81").toCharArray(charBufVar, 150); // q
+              u8g.drawStr( 40, 52 , charBufVar);
+            } while( u8g.nextPage() );
+            delay(6000);
+            digitalWrite(DOOR_1, LOW);
+            operation = 0;
+            randomize_mode = true;
+          }  else {
+            voice_mp3.wakeUp();
+            voice_mp3.play(52);
+          
+            delay(3000);
+          
+            voice_mp3.sleep();
+            randomize_mode = !simple_mode;
           }
+    
+          main_state = 0;
+          main_result = 0;
+          cleared = 0;
+          ask = true;
+        } else if (ask){
+          ask = false;
+    
+          if (operation == 0) {//clock_random(10,14)
+            operation = simple_mode ? clock_random(11,15) : clock_random(1,11);
+          }
+  
+          debug( "get_question_functions:" );
+          debug( operation );
+  
+          get_question_functions[operation]();
+          quiet_mode = false;
+  
+        }
       } 
-    }
-
-    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS && !sleep_mode) {
-    // the dial isn't being dialed, or has just finished being dialed.
-
-
-      if (analogRead(PRESSURE_AI) > 150) {
-          digitalWrite(DOOR_1, HIGH);
-          delay(1000);
-          digitalWrite(DOOR_1, LOW);
+  
+  
+      if (operation != 0 && !sleep_mode) {
+        get_functions[operation]();
       }
-  
-      if (main_state == 1) {
-      // if it's only just finished being dialed, we need to send the number down the serial
-      // line and reset the main_result. We mod the main_result by 10 because '0' will send 10 pulses.
-  
-        show_result_functions[operation]();
-  
-        //delay(400);
-        delay(1000);
-
-        correct_answer = check_result_functions[operation]();
-        if (correct_answer) {
-
-          
-          voice_mp3.wakeUp();
-          voice_mp3.play(51);
-        
-          delay(1000);
-        
-          voice_mp3.sleep();
-
-
-          
-          digitalWrite(DOOR_1, HIGH);
-          u8g.firstPage();  
-          do {
-            char charBufVar[150];
-            String(main_result % 10).toCharArray(charBufVar, 150);
-            u8g.setFont(u8g_font_osr35);
-            String("\x81").toCharArray(charBufVar, 150); // q
-            u8g.drawStr( 40, 52 , charBufVar);
-          } while( u8g.nextPage() );
-          delay(6000);
-          digitalWrite(DOOR_1, LOW);
-          operation = 0;
-          randomize_mode = true;
-        }  else {
-          voice_mp3.wakeUp();
-          voice_mp3.play(52);
-        
-          delay(3000);
-        
-          voice_mp3.sleep();
-          randomize_mode = !simple_mode;
-        }
-  
-        main_state = 0;
-        main_result = 0;
-        cleared = 0;
-        ask = true;
-      } else if (ask){
-        ask = false;
-  
-        if (operation == 0) {//clock_random(10,14)
-          operation = simple_mode ? clock_random(11,14) : clock_random(1,11);
-        }
-
-        debug( "get_question_functions:" );
-        debug( operation );
-
-        get_question_functions[operation]();
-        quiet_mode = false;
-
-      }
-    } 
-
-    if (operation != 0 && !sleep_mode) {
-      get_functions[operation]();
+      sleep_mode = digitalRead(IR_DI)==LOW;
     }
   } else {
     debug(analogRead(PRESSURE_AI));
@@ -1021,7 +1062,7 @@ void dump_byte_array(byte * buffer, byte bufferSize) {
 
 void get_question_rfid_letter(){
 //  get_question_rfid(32);
-  get_question_rfid(5);
+  get_question_rfid(10);
 }
 
 void get_rfid_letter() {
@@ -1029,12 +1070,21 @@ void get_rfid_letter() {
 }
 
 void get_question_rfid_digit(){
-//  get_question_rfid(10);
-  get_question_rfid(5);
+  get_question_rfid(10);
+//  get_question_rfid(5);
+}
+
+void get_question_rfid_word(){
+  get_question_rfid(2);
+//  get_question_rfid(5);
 }
 
 void get_rfid_digit() {
         check_card(digit_cards, 32, 50);
+}
+
+void get_rfid_word() {
+        check_cards(letter_cards, word_cards[digit_1-1], 53, 53);
 }
 
 boolean check_result_rfid(){
@@ -1084,6 +1134,90 @@ void get_question_rfid(int size){
   } while( u8g.nextPage() );
 }
 
+
+bool rfid_tag_present_prev[4] = {false,false,false,false};
+bool rfid_tag_present[4] = {false,false,false,false};
+int _rfid_error_counter[4] = {0,0,0,0};
+bool _tag_found[4] = {false,false,false,false};
+byte present_cards[4][7]  = {
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+};
+
+
+boolean scan_card(int reader){ //https://github.com/miguelbalboa/rfid/issues/352#issue-282870788
+  boolean newFound = false;
+  delay(100);
+
+//    mfrc522[reader].PCD_SetAntennaGain(0x07<<4);
+  mfrc522[reader].PCD_AntennaOn();
+
+  rfid_tag_present_prev[reader] = rfid_tag_present[reader];
+
+  _rfid_error_counter[reader] += 1;
+  if(_rfid_error_counter[reader] > 2){
+    _tag_found[reader] = false;
+  }
+
+  // Detect Tag without looking for collisions
+  byte bufferATQA[2];
+  byte bufferSize = sizeof(bufferATQA);
+
+  // Reset baud rates
+  mfrc522[reader].PCD_WriteRegister(mfrc522[reader].TxModeReg, 0x00);
+  mfrc522[reader].PCD_WriteRegister(mfrc522[reader].RxModeReg, 0x00);
+  // Reset ModWidthReg
+  mfrc522[reader].PCD_WriteRegister(mfrc522[reader].ModWidthReg, 0x26);
+
+  MFRC522::StatusCode result = mfrc522[reader].PICC_RequestA(bufferATQA, &bufferSize);
+
+  if(result == mfrc522[reader].STATUS_OK){
+    if ( ! mfrc522[reader].PICC_ReadCardSerial()) { //Since a PICC placed get Serial and continue   
+        mfrc522[reader].PCD_AntennaOff();
+        return newFound;
+    }
+    _rfid_error_counter[reader] = 0;
+    _tag_found[reader] = true;        
+  }
+  
+  rfid_tag_present[reader] = _tag_found[reader];
+  
+  // rising edge
+  if (rfid_tag_present[reader] && !rfid_tag_present_prev[reader]){
+    Serial.println("Tag found");
+    for (int i = 0; i < mfrc522[reader].uid.size; i++) {
+      present_cards[reader][i] = mfrc522[reader].uid.uidByte[i];
+    }
+    newFound = true;
+  }
+  
+  // falling edge
+  if (!rfid_tag_present[reader] && rfid_tag_present_prev[reader]){
+    Serial.println("Tag gone");
+    for (int i = 0; i < 7; i++) {
+      present_cards[reader][i] = 0x00;
+    }
+
+  }
+
+  mfrc522[reader].PCD_AntennaOff();
+  return newFound;
+}
+
+int scan_cards(){
+  int reader_new_card = 0;
+  for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+    check_voice(); 
+    if (scan_card(reader)) {
+      reader_new_card = reader +1;
+    }
+  }
+
+  return reader_new_card;
+}
+
 void check_card(byte cards[][7], int voice_shift, int voice_type) {
         check_voice();
         if (voice_pressed) {
@@ -1103,71 +1237,111 @@ void check_card(byte cards[][7], int voice_shift, int voice_type) {
           voice_pressed = false;
         } 
         check_voice(); 
-          // RFID Loop
-        boolean has_cards = false;
 
-        for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
-          check_voice(); 
-          // Looking for new cards
-          if (mfrc522[reader].PICC_IsNewCardPresent()) {
-            if (mfrc522[reader].PICC_ReadCardSerial()) {
-              
-              mfrc522[reader].PICC_IsNewCardPresent(); // reread is new card present for ignoring at next time
-              
-              has_cards = true;
-  
-              if (!had_cards) {
-  
+        if (scan_rfid_time > millis() || millis()-scan_rfid_time > 1000) { // Check rfid only one time in sec
+          scan_rfid_time = millis();
+
+          int reader_new_card = scan_cards();
+          for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+            dump_byte_array(present_cards[reader], 7);
+            Serial.println();
+          }
+          check_voice();                          
+
+          if (reader_new_card > 0) {
+              for (int i = 0; i < 7; i++) {       //tagarray's columns
                 check_voice();
-  
-                if(DEBUG_SERIAL) {
-                  Serial.print(F("Reader "));
-                  Serial.print(reader);
-          
-                // Show some details of the PICC (that is: the tag/card)
-                  Serial.print(F(": Card UID:"));
-                  dump_byte_array(mfrc522[reader].uid.uidByte, mfrc522[reader].uid.size);
-                  Serial.println();
-                }
-          
-                for (int i = 0; i < mfrc522[reader].uid.size; i++) {       //tagarray's columns
-                  check_voice();
-                  if ( mfrc522[reader].uid.uidByte[i] != cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
-                      main_state = 1;
-                      main_result = 0;
-                      had_cards = true;
+                if ( present_cards[reader_new_card-1][i] != cards[digit_1-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
+                    main_state = 1;
+                    main_result = 0;
+                  return;
+                } else {
+                  if (i == 6) {                // Test if we browesed the whole UID.
+                    main_state = 1;
+                    main_result = 1;
                     return;
                   } else {
-                    if (i == mfrc522[reader].uid.size - 1) {                // Test if we browesed the whole UID.
-                      main_state = 1;
-                      main_result = 1;
-                      had_cards = true;
-                      return;
-                    } else {
-                      continue;                                           // We still didn't reach the last cell/column : continue testing!
-                    }
+                    continue;                                           // We still didn't reach the last cell/column : continue testing!
                   }
                 }
-  
-  
-                /*Serial.print(F("PICC type: "));
-                  MFRC522::PICC_Type piccType = mfrc522[reader].PICC_GetType(mfrc522[reader].uid.sak);
-                  Serial.println(mfrc522[reader].PICC_GetTypeName(piccType));*/
-                // Halt PICC
-                check_voice();
-                mfrc522[reader].PICC_HaltA();
-                check_voice();
-                // Stop encryption on PCD
-                mfrc522[reader].PCD_StopCrypto1();
-                check_voice();
-              } //  if (main_result..
-            } //if (mfrc522[reader].PICC_IsNewCa..
+              }
           }
-        } //for(uint8_t reader..
+        }
+        main_state = 0;
 
-        had_cards = has_cards;
+}
 
+void check_cards(byte cards[][7], int card_numbers[], int voice_shift, int voice_type) {
+        check_voice();
+        if (voice_pressed) {
+          debug("voice pressed");
+
+          voice_mp3.wakeUp();
         
+
+          if (voice_type != 0) {
+            voice_mp3.play(voice_type);
+            delay(1700);
+          }
+          voice_mp3.play(voice_shift + digit_1);
+          debug(voice_shift + digit_1);
+          delay(2000);
+          voice_mp3.sleep();
+          voice_pressed = false;
+        } 
+        check_voice(); 
+
+
+        int letter_count = 0;
+        for (int i = 0; i < 4; i++){
+          if (card_numbers[i] != 0) {
+            letter_count++;
+          }
+        }
+ 
+        if (scan_rfid_time > millis() || millis()-scan_rfid_time > 1000) { // Check rfid only one time in sec
+          scan_rfid_time = millis();
+            // RFID Loop
+          int reader_new_card = scan_cards();
+
+          int card_count = 0;
+          boolean has_new_card = false;
+          for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+              boolean isCard = false;
+              for (int i = 0; i < 7; i++) {       //tagarray's columns
+                if (present_cards[reader][i] != 0x00){
+                  isCard = true;
+                }
+              }
+              if (isCard) {
+                card_count++;
+              }
+          }
+
+          if (reader_new_card && card_count == letter_count) {
+            int current_card = 0;
+            for (uint8_t reader = 0; reader < NR_OF_READERS; reader++) {
+                    for (int i = 0; i < 7; i++) {       //tagarray's columns
+                      if ( present_cards[reader][i] != cards[card_numbers[current_card]-1][i]) {  //Comparing the UID in the buffer to the UID in the tag array.
+                        main_state = 1;
+                        main_result = 0;
+                        return;
+                      } else {
+                       if (i == 6 && current_card == letter_count-1) {                // Test if we browesed the whole UID.
+                          main_state = 1;
+                          main_result = 1;
+                          return;
+                        } else {
+                          continue;                                           // We still didn't reach the last cell/column : continue testing!
+                        }
+                      }
+                    }
+      
+                    check_voice();
+                    current_card++;
+            }
+          }
+        }
         main_state = 0;
 
 }
@@ -1197,7 +1371,7 @@ void get_question_digit(){
   
   if (!quiet_mode && randomize_mode) {
 //    digit_1 = clock_random(0, 10);
-    digit_1 = clock_random(1, 6);
+    digit_1 = clock_random(1, 10);
     debug("get digit");
     debug(digit_1);
   }
