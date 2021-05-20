@@ -84,6 +84,7 @@ int main_result = 0;
 int lastState = LOW;
 int trueState = LOW;
 long lastStateChangeTime = 0;
+boolean time_to_rotary_read = false;
 int cleared = 0;
 short digit_1;
 short digit_2;
@@ -93,6 +94,9 @@ String colors[5];
 short pans[50];
 short color_pans[5];
 String operations[2];
+
+// Main
+
 boolean started = false;
 boolean ask = true;
 boolean simple_mode = false;
@@ -319,7 +323,7 @@ void setup() {
     Serial.println("RTC lost power, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-    rtc.adjust(DateTime(2021,05,20,01,01,34));
+    //rtc.adjust(DateTime(2021,05,20,01,01,34));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
@@ -570,8 +574,6 @@ void setup() {
 
 void loop() 
 { 
-   // Rotary
-  reading = digitalRead(ROTARY_IN);
 
          
   // Inputs
@@ -585,8 +587,7 @@ void loop()
 
   if (digitalRead(OPEN_DI)==LOW) { // cower is open
 
-    if ((millis() - lastStateChangeTime) > FINISHED_AFTER_MS){
-  
+
       if (sleep_mode ) {
         if (!wake_mode) {
           // clear lcd 
@@ -694,11 +695,9 @@ void loop()
         }
       } 
   
-  
-      if (operation != 0 && !sleep_mode) {
-        get_functions[operation]();
-      }
       sleep_mode = digitalRead(IR_DI)==LOW;
+    if (operation != 0 && !sleep_mode) {
+        get_functions[operation]();
     }
   } else {
     debug(analogRead(PRESSURE_AI));
@@ -735,6 +734,7 @@ void show_result_dummy() {
 }
 
 void get_question_1(){
+
   String op = "";
       
   char charBufOperation1[150];
@@ -896,6 +896,9 @@ void get_question_equal(){
 
 
 void get_rotary () {
+    // Rotary
+    reading = digitalRead(ROTARY_IN);
+
     if (reading != lastState) {
       lastStateChangeTime = millis();
     }
@@ -911,10 +914,14 @@ void get_rotary () {
           do {
             u8g.drawLine(0, 10, main_result % 10 * 14, 10);
           } while( u8g.nextPage() );
-          main_result++; 
-          main_state = 1; // we'll need to print this number (once the dial has finished rotating)
+          main_result++;
+          time_to_rotary_read = true;
         } 
       }
+    }
+    if (time_to_rotary_read && (millis() - lastStateChangeTime) > FINISHED_AFTER_MS) {
+      main_state = 1; // we'll need to print this number (once the dial has finished rotating)
+      time_to_rotary_read = false;
     }
     lastState = reading;
 }
@@ -922,6 +929,7 @@ void get_rotary () {
 // rotary
 
 void show_result_digit(){
+
   char charBufVar[150];
   String(main_result % 10).toCharArray(charBufVar, 150);
 
@@ -938,23 +946,24 @@ void show_result_digit(){
 }
 
 boolean check_result_1(){
-  return digit_1 + digit_2 == (main_result % 10);
+
+    return digit_1 + digit_2 == (main_result % 10);
 }
   
 boolean check_result_2(){
-  return  digit_1 - digit_2 == (main_result % 10);
+    return  digit_1 - digit_2 == (main_result % 10);
 }
 
 boolean check_result_3(){
-  return digit_1 + digit_2 == (main_result % 10);
+    return digit_1 + digit_2 == (main_result % 10);
 }
 
 boolean check_result_4(){
-  return digit_1 - digit_2 == (main_result % 10);
+    return digit_1 - digit_2 == (main_result % 10);
 }
 
 boolean check_result_equal(){
-  return digit_1 == (main_result % 10);
+    return digit_1 == (main_result % 10);
 }
 
 
@@ -1349,45 +1358,46 @@ void check_cards(byte cards[][7], int card_numbers[], int voice_shift, int voice
 // Rotary Audio Digit
 
 void get_question_digit(){
-  if (!quiet_mode) {
-
-    voice_mp3.wakeUp();
-    voice_mp3.play(32);
+    if (!quiet_mode) {
   
-    delay(2000);
+      voice_mp3.wakeUp();
+      voice_mp3.play(32);
+    
+      delay(2000);
+    
+      voice_mp3.sleep();
+    }
   
-    voice_mp3.sleep();
-  }
-
-  String op = "";
+    String op = "";
+    
+    char charBufOperation1[150];
+    char charBufOperation2[150];
+    char charBufOperation3[150];
+    
+    op.toCharArray(charBufOperation1, 150);
+    op.toCharArray(charBufOperation2, 150);
+    op.toCharArray(charBufOperation3, 150);
+    
+    if (!quiet_mode && randomize_mode) {
+  //    digit_1 = clock_random(0, 10);
+      digit_1 = clock_random(1, 10);
+      debug("get digit");
+      debug(digit_1);
+    }
+    String(words[digit_1]).toCharArray(charBufOperation2, 150);
+    //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
   
-  char charBufOperation1[150];
-  char charBufOperation2[150];
-  char charBufOperation3[150];
-  
-  op.toCharArray(charBufOperation1, 150);
-  op.toCharArray(charBufOperation2, 150);
-  op.toCharArray(charBufOperation3, 150);
-  
-  if (!quiet_mode && randomize_mode) {
-//    digit_1 = clock_random(0, 10);
-    digit_1 = clock_random(1, 10);
-    debug("get digit");
-    debug(digit_1);
-  }
-  String(words[digit_1]).toCharArray(charBufOperation2, 150);
-  //"\xdf\xdb"; http://www.codenet.ru/services/urlencode-urldecode/ - F
-
-  u8g.firstPage();  
-  do {
-    u8g.setFont(u8g_font_osr21);
-    u8g.drawStr(10, 18 , charBufOperation1);
-    u8g.drawStr(10, 40 , charBufOperation2);
-    u8g.drawStr(10, 62 , charBufOperation3);
-  } while( u8g.nextPage() );
+    u8g.firstPage();  
+    do {
+      u8g.setFont(u8g_font_osr21);
+      u8g.drawStr(10, 18 , charBufOperation1);
+      u8g.drawStr(10, 40 , charBufOperation2);
+      u8g.drawStr(10, 62 , charBufOperation3);
+    } while( u8g.nextPage() );
 }
 
 void get_rotary_digit () {
+
     check_voice();
     if (voice_pressed) {
       debug("voice pressed");
