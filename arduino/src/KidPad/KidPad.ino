@@ -44,6 +44,7 @@ boolean voice_pressed = false;
 
 // Time
 RTC_DS3231 rtc;
+
 #define DS3231_I2C_ADDRESS 0x68
 
 const int MILLIS_PIN = 2; // use any digital pin you need.
@@ -323,7 +324,9 @@ void setup() {
     Serial.println("RTC lost power, let's set the time!");
     // When time needs to be set on a new device, or after a power loss, the
     // following line sets the RTC to the date & time this sketch was compiled
-    //rtc.adjust(DateTime(2021,05,20,01,01,34));
+    //rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+     rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+    // rtc.adjust(DateTime(2022,02,26,17,02,34));
     // This line sets the RTC with an explicit date & time, for example to set
     // January 21, 2014 at 3am you would call:
     // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
@@ -683,7 +686,7 @@ void loop()
           ask = false;
     
           if (operation == 0) {//clock_random(10,14)
-            operation = simple_mode ? clock_random(11,15) : clock_random(1,11);
+            operation = simple_mode ? clock_random(11,14) : clock_random(1,11);
           }
   
           debug( "get_question_functions:" );
@@ -1070,8 +1073,8 @@ void dump_byte_array(byte * buffer, byte bufferSize) {
 }
 
 void get_question_rfid_letter(){
-//  get_question_rfid(32);
-  get_question_rfid(10);
+  get_question_rfid(32);
+  //get_question_rfid(10);
 }
 
 void get_rfid_letter() {
